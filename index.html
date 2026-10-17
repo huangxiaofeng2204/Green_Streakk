@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Chuỗi Ngày Sống Xanh</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Hiệu ứng chuyển mượt mà */
+        .tab-content { display: none; animation: fadeIn 0.3s ease-in-out; }
+        .tab-content.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        /* Tùy chỉnh thanh cuộn ẩn */
+        ::-webkit-scrollbar { display: none; }
+    </style>
+</head>
+<body class="bg-gray-100 flex justify-center text-gray-800">
+    <!-- Mobile Container -->
+    <div class="w-full max-w-md bg-white min-h-screen shadow-2xl relative pb-20 flex flex-col">
+        
+        <!-- Header & Progress Bar -->
+        <header class="bg-green-600 text-white sticky top-0 z-20 shadow-md">
+            <div class="p-4 flex justify-between items-center">
+                <h1 class="font-bold text-lg">🌿 Chuỗi Ngày Sống Xanh</h1>
+                <span id="user-points" class="font-bold bg-green-500 px-3 py-1 rounded-full text-sm shadow-inner">0 đ</span>
+            </div>
+            <!-- Progress Bar -->
+            <div class="h-2 bg-green-800 w-full">
+                <div id="daily-progress" class="h-full bg-white transition-all duration-500 ease-out" style="width: 20%;"></div>
+            </div>
+        </header>
+
+        <!-- Main Content Area -->
+        <main class="flex-1 overflow-y-auto p-4">
+            
+            <!-- Tab: Nhiệm vụ -->
+            <div id="tab-missions" class="tab-content active">
+                <h2 class="text-xl font-bold text-green-700 mb-4">Nhiệm vụ hôm nay</h2>
+                <div id="mission-list" class="space-y-3">
+                    <!-- Sẽ được render tự động bằng Javascript -->
+                </div>
+            </div>
+
+            <!-- Tab: Bảng Xếp Hạng -->
+            <div id="tab-leaderboard" class="tab-content">
+                <h2 class="text-xl font-bold text-green-700 mb-4">🏆 Bảng Vàng Tích Điểm</h2>
+                <ul id="leaderboard-list" class="bg-green-50 rounded-xl p-2 space-y-2 border border-green-200">
+                    <!-- Dữ liệu mẫu (Sẽ đồng bộ realtime từ Firebase sau này) -->
+                </ul>
+            </div>
+
+            <!-- Tab: Hồ Sơ -->
+            <div id="tab-profile" class="tab-content">
+                <h2 class="text-xl font-bold text-green-700 mb-4">Hồ sơ cá nhân</h2>
+                <div class="flex flex-col items-center mb-6">
+                    <div class="w-24 h-24 rounded-full border-4 border-green-500 bg-gray-200 mb-3 flex items-center justify-center text-gray-400 overflow-hidden">
+                        <img id="profile-avatar" src="" alt="Avatar" class="hidden w-full h-full object-cover">
+                        <svg class="w-12 h-12 avatar-placeholder" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                    </div>
+                    <input type="file" id="upload-avatar" class="hidden" accept="image/*">
+                    <button onclick="document.getElementById('upload-avatar').click()" class="text-sm bg-green-100 text-green-700 px-4 py-2 rounded-full font-semibold">Đổi ảnh đại diện</button>
+                </div>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-600">Tên hiển thị</label>
+                        <input type="text" id="profile-name" placeholder="EcoHero_1234" class="w-full border-b-2 border-green-300 py-2 focus:outline-none focus:border-green-600 bg-transparent">
+                    </div>
+                    <button id="save-profile" class="w-full bg-green-600 text-white font-bold py-3 rounded-lg shadow-md hover:bg-green-700">Lưu thay đổi</button>
+                </div>
+                <!-- Admin trigger (Nút ẩn dành cho BTC) -->
+                <div class="mt-12 text-center">
+                    <button onclick="switchTab('admin')" class="text-xs text-gray-300 hover:text-gray-500">Admin Area</button>
+                </div>
+            </div>
+
+            <!-- Tab: Admin (Khu vực duyệt bài) -->
+            <div id="tab-admin" class="tab-content">
+                <h2 class="text-xl font-bold text-red-600 mb-4">Khu vực Ban Tổ Chức</h2>
+                <div id="admin-login-area">
+                    <p class="text-sm text-gray-600 mb-2">Vui lòng nhập mật khẩu để truy cập.</p>
+                    <input type="password" id="admin-pwd" placeholder="Mật khẩu Admin..." class="w-full border border-gray-300 rounded p-3 mb-3 focus:outline-none focus:border-red-500">
+                    <button id="btn-admin-login" class="w-full bg-red-600 text-white font-bold p-3 rounded-lg shadow">Đăng nhập</button>
+                </div>
+                <div id="admin-dashboard" class="hidden">
+                    <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4 flex justify-between items-center">
+                        <span class="font-bold text-yellow-700">⏳ Hàng đợi duyệt</span>
+                        <span class="bg-yellow-500 text-white text-xs font-bold px-2 py-1 rounded-full">3</span>
+                    </div>
+                    <div id="pending-list" class="space-y-4">
+                        <!-- Render duyệt nhiệm vụ mẫu -->
+                    </div>
+                </div>
+            </div>
+
+        </main>
+
+        <!-- Bottom Navigation -->
+        <nav class="bg-white border-t border-gray-200 flex justify-around p-3 fixed bottom-0 w-full max-w-md z-20 shadow-[0_-2px_10px_rgba(0,0,0,0.05)]">
+            <button onclick="switchTab('missions')" class="nav-btn text-green-600 flex flex-col items-center p-2 transition-colors duration-200">
+                <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                <span class="text-[10px] font-semibold uppercase tracking-wider">Nhiệm vụ</span>
+            </button>
+            <button onclick="switchTab('leaderboard')" class="nav-btn text-gray-400 flex flex-col items-center p-2 transition-colors duration-200">
+                <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
+                <span class="text-[10px] font-semibold uppercase tracking-wider">Đua Top</span>
+            </button>
+            <button onclick="switchTab('profile')" class="nav-btn text-gray-400 flex flex-col items-center p-2 transition-colors duration-200">
+                <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                <span class="text-[10px] font-semibold uppercase tracking-wider">Hồ sơ</span>
+            </button>
+        </nav>
+
+        <!-- Modal Upload Nhiệm vụ -->
+        <div id="upload-modal" class="hidden fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+            <div class="bg-white rounded-2xl w-full max-w-sm p-6 relative shadow-2xl transform transition-all">
+                <button onclick="closeModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-700 bg-gray-100 rounded-full p-1">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+                <h3 id="modal-title" class="font-bold text-xl mb-1 text-green-700 pr-6">Tên nhiệm vụ</h3>
+                <p id="modal-desc" class="text-sm text-gray-500 mb-5">Yêu cầu</p>
+                
+                <div class="border-2 border-dashed border-green-400 rounded-xl p-8 text-center bg-green-50 hover:bg-green-100 transition-colors mb-4 relative cursor-pointer group">
+                    <input type="file" id="mission-file" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" accept="image/*,video/*" capture="environment">
+                    <div class="text-green-600 font-semibold flex flex-col items-center">
+                        <div class="bg-white p-3 rounded-full shadow-sm mb-3 group-hover:scale-110 transition-transform">
+                            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                        </div>
+                        <span class="text-sm">Chạm để chụp / tải ảnh</span>
+                    </div>
+                </div>
+                <p id="file-name" class="text-xs text-center text-gray-500 mb-4 truncate px-2"></p>
+                <button id="submit-mission" class="w-full bg-green-600 text-white font-bold py-3 rounded-xl hover:bg-green-700 shadow-md transition-colors">Nộp minh chứng</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- KHỐI JAVASCRIPT & FIREBASE -->
+    <script type="module">
+        // Import Firebase SDK (Yêu cầu cấu hình Firebase Project thực tế)
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js";
+        import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-firestore.js";
+        import { getStorage, ref, uploadString, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-storage.js";
+
+        // Cấu hình Firebase giả lập (Bạn cần thay bằng config thật từ Firebase Console của bạn)
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_PROJECT.firebaseapp.com",
+            projectId: "YOUR_PROJECT",
+            storageBucket: "YOUR_PROJECT.appspot.com",
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const storage = getStorage(app);
+
+        // 1. Danh sách 10 Nhiệm vụ hằng ngày
+        const missionsList = [
+            { id: 'm1', title: 'Chiến thần rút chốt', desc: 'Rút 8 phích cắm điện khác nhau (1 ảnh)', points: 20 },
+            { id: 'm2', title: 'Phong ấn lôi thần', desc: 'Tắt 5 công tắc điện (1 ảnh)', points: 10 },
+            { id: 'm3', title: 'Thực thần càn quét', desc: 'Vét sạch đồ ăn (1 ảnh)', points: 10 },
+            { id: 'm4', title: 'Thủy bình độc bản', desc: 'Sử dụng bình nước/ly cá nhân mua nước (1 ảnh)', points: 30 },
+            { id: 'm5', title: 'Căng hải vào việc', desc: 'Đi bộ thay vì đi xe máy (1 ảnh đếm bước chân)', points: 20 },
+            { id: 'm6', title: 'Túi/Balo vạn năng', desc: 'Mang túi riêng/balo đựng đồ (1 ảnh tại quán)', points: 30 },
+            { id: 'm7', title: 'Khai mở phong môn', desc: 'Mở 4 cánh cửa sổ khác nhau (ghép 1 ảnh)', points: 10 },
+            { id: 'm8', title: 'Cấp thủy dưỡng mộc', desc: 'Tưới cây (1 ảnh)', points: 10 },
+            { id: 'm9', title: 'Thanh trừng rác thải', desc: 'Vứt rác đúng nơi quy định (1 ảnh)', points: 10 },
+            { id: 'm10', title: 'Độ lại đồ phế', desc: 'Tái chế 1 sản phẩm có tính ứng dụng (1 ảnh)', points: 50 }
+        ];
+
+        let currentUser = { uid: "user123", displayName: "EcoHero" }; // Mock User
+        let currentMissionId = null;
+        let currentFileData = null; 
+        let isVideo = false;
+
+        // Render Danh sách nhiệm vụ ra màn hình
+        const renderMissions = () => {
+            const list = document.getElementById('mission-list');
+            list.innerHTML = "";
+            missionsList.forEach(mission => {
+                list.innerHTML += `
+                    <div class="bg-white border border-gray-100 rounded-xl p-4 shadow-sm flex justify-between items-center hover:shadow-md transition-shadow">
+                        <div class="pr-3">
+                            <h3 class="font-bold text-green-700 text-sm mb-1">${mission.title}</h3>
+                            <p class="text-xs text-gray-500 leading-relaxed">${mission.desc}</p>
+                            <span class="text-[10px] font-bold text-orange-600 bg-orange-50 px-2 py-1 rounded-md mt-2 inline-block border border-orange-100">
+                                +${mission.points} điểm
+                            </span>
+                        </div>
+                        <button onclick="openModal('${mission.id}', '${mission.title}', '${mission.desc}')" class="flex-shrink-0 bg-green-50 text-green-600 p-3 rounded-full hover:bg-green-500 hover:text-white transition-colors">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                        </button>
+                    </div>
+                `;
+            });
+        };
+
+        // Render Bảng xếp hạng mẫu
+        const renderLeaderboard = () => {
+            const list = document.getElementById('leaderboard-list');
+            list.innerHTML = `
+                <li class="flex justify-between items-center bg-white p-3 rounded-lg shadow-sm border-l-4 border-yellow-400 mb-2">
+                    <div class="flex items-center gap-3">
+                        <span class="text-2xl">🥇</span> 
+                        <span class="font-bold text-gray-700">Nhã Uyên</span>
+                    </div>
+                    <span class="font-bold text-green-600 bg-green-50 px-3 py-1 rounded-full text-sm">320 đ</span>
+                </li>
+                <li class="flex justify-between items-center bg-white p-3 rounded-lg shadow-sm border-l-4 border-gray-400 mb-2">
+                    <div class="flex items-center gap-3">
+                        <span class="text-2xl">🥈</span> 
+                        <span class="font-bold text-gray-700">Minh Anh</span>
+                    </div>
+                    <span class="font-bold text-green-600 bg-green-50 px-3 py-1 rounded-full text-sm">290 đ</span>
+                </li>
+                <li class="flex justify-between items-center bg-white p-3 rounded-lg shadow-sm border-l-4 border-orange-400 mb-2">
+                    <div class="flex items-center gap-3">
+                        <span class="text-2xl">🥉</span> 
+                        <span class="font-bold text-gray-700">Người Sành Điệu</span>
+                    </div>
+                    <span class="font-bold text-green-600 bg-green-50 px-3 py-1 rounded-full text-sm">210 đ</span>
+                </li>
+            `;
+        };
+
+        // Khởi tạo giao diện lần đầu
+        renderMissions();
+        renderLeaderboard();
+
+        // 2. Logic xử lý ngày
+        const getTodayString = () => {
+            const d = new Date();
+            return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+        };
+
+        // 3. Tối ưu ảnh: Nén bằng Canvas
+        const compressImage = (file) => {
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        const MAX_WIDTH = 600;
+                        const scaleSize = MAX_WIDTH / img.width;
+                        canvas.width = MAX_WIDTH;
+                        canvas.height = img.height * scaleSize;
+                        
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                        resolve(canvas.toDataURL('image/jpeg', 0.8));
+                    };
+                    img.src = event.target.result;
+                };
+                reader.readAsDataURL(file);
+            });
+        };
+
+        // Xử lý File Input
+        document.getElementById('mission-file').addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            document.getElementById('file-name').innerText = file.name;
+            
+            if (file.type.startsWith('video/')) {
+                isVideo = true;
+                currentFileData = file;
+            } else {
+                isVideo = false;
+                currentFileData = await compressImage(file);
+            }
+        });
+
+        // 4. Submit Nộp minh chứng (Giả lập khi chưa có Firebase thật)
+        document.getElementById('submit-mission').addEventListener('click', async () => {
+            if (!currentFileData) return alert("Vui lòng chụp/tải lên minh chứng!");
+            
+            const btn = document.getElementById('submit-mission');
+            btn.innerText = "Đang tải lên...";
+            btn.disabled = true;
+
+            // Giả lập thời gian load (Mô phỏng Firebase Upload)
+            setTimeout(() => {
+                alert(`Nộp thành công nhiệm vụ: ${currentMissionId}. Đang chờ Ban Tổ Chức duyệt!`);
+                closeModal();
+                btn.innerText = "Nộp minh chứng";
+                btn.disabled = false;
+                currentFileData = null;
+                document.getElementById('file-name').innerText = "";
+            }, 1000);
+        });
+
+        // 5. Luồng Admin Panel (Đăng nhập)
+        document.getElementById('btn-admin-login').addEventListener('click', () => {
+            const pwd = document.getElementById('admin-pwd').value;
+            if (pwd === "adminvippro1102") {
+                document.getElementById('admin-login-area').classList.add('hidden');
+                document.getElementById('admin-dashboard').classList.remove('hidden');
+                loadPendingApprovalsMock();
+            } else {
+                alert("Sai mật khẩu Ban Tổ Chức!");
+            }
+        });
+
+        // Render danh sách chờ duyệt giả lập cho Admin
+        const loadPendingApprovalsMock = () => {
+            const list = document.getElementById('pending-list');
+            list.innerHTML = `
+                <div class="bg-white border border-gray-200 p-4 rounded-xl shadow-sm">
+                    <p class="font-bold text-sm text-gray-800 mb-1">Nhã Uyên <span class="font-normal text-gray-500">nộp</span> Căng hải vào việc</p>
+                    <div class="h-24 w-full bg-gray-200 rounded-lg mb-3 flex items-center justify-center text-xs text-gray-400">Hình ảnh đính kèm</div>
+                    <div class="flex gap-2">
+                        <button class="flex-1 bg-green-500 hover:bg-green-600 text-white text-sm font-semibold py-2 rounded-lg transition-colors">Duyệt (+20đ)</button>
+                        <button class="flex-1 bg-red-100 hover:bg-red-200 text-red-600 text-sm font-semibold py-2 rounded-lg transition-colors">Từ chối</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Giao diện: Chuyển Tab (Gắn trực tiếp vào global window để HTML gọi được)
+        window.switchTab = (tabId) => {
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+            document.getElementById(`tab-${tabId}`).classList.add('active');
+            
+            // Cập nhật màu nút điều hướng bên dưới
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('text-green-600');
+                btn.classList.add('text-gray-400');
+            });
+            if(event && event.currentTarget.classList.contains('nav-btn')){
+                event.currentTarget.classList.remove('text-gray-400');
+                event.currentTarget.classList.add('text-green-600');
+            }
+        };
+
+        // Giao diện: Đóng mở Modal
+        window.openModal = (id, title, desc) => {
+            currentMissionId = id;
+            document.getElementById('modal-title').innerText = title;
+            document.getElementById('modal-desc').innerText = desc;
+            document.getElementById('upload-modal').classList.remove('hidden');
+        };
+
+        window.closeModal = () => document.getElementById('upload-modal').classList.add('hidden');
+    </script>
+</body>
+</html>
